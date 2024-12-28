@@ -11,10 +11,10 @@ namespace DemoShop.API.Controllers.Account
     [Route("api/account/[controller]")]
     public class RegisterController : ControllerBase
     {
-        private readonly IAccountService _accountService;
-        public RegisterController(IAccountService accountService)
+        private readonly IAuthenticateUserService _userService;
+        public RegisterController(IAuthenticateUserService userService)
         {
-            _accountService = accountService;
+            _userService = userService;
             Log.Information("RegisterController initialized.");
         }
 
@@ -31,7 +31,7 @@ namespace DemoShop.API.Controllers.Account
                 Guid = Guid.NewGuid().ToString(), //ToDo optimize
             };
 
-            _accountService.Register(user);
+            _userService.Register(user);
 
             return Ok(new { message = "Registration successful" });
         }

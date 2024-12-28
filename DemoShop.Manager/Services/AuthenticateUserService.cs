@@ -1,8 +1,10 @@
-﻿using DemoShop.Manager.DBContext;
+﻿using DemoShop.Core.DataObjects;
+using DemoShop.Manager.DBContext;
 using DemoShop.Manager.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace DemoShop.Manager.Services
@@ -23,7 +25,7 @@ namespace DemoShop.Manager.Services
         {
             Log.Information("Authenticating user: {Username}", username);
             var user = _context.Users.FirstOrDefault(x => x.Username == username);
-            if (user == null || user.PasswordHash != password || String.IsNullOrWhiteSpace(_jwtKey))
+            if (user == null || user.PasswordHash != HashPassword(password) || String.IsNullOrWhiteSpace(_jwtKey))
             {
                 Log.Warning("Authentication failed for user: {Username}", username);
                 return null;
@@ -39,6 +41,28 @@ namespace DemoShop.Manager.Services
             var token = tokenHandler.CreateToken(tokenDescriptor);
             Log.Information("Token generated for user: {Username}", username);
             return tokenHandler.WriteToken(token);
+        }
+        public void Register(User user)
+        {
+            Log.Information("Registering new user: {Username}", user.Username);
+            user.PasswordHash = HashPassword(user.PasswordHash);
+            _context.Users.Add(user);
+            _context.SaveChanges();
+            Log.Information("User registered successfully: {Username}", user.Username);
+        }
+
+        private string HashPassword(string password)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    builder.Append(bytes[i].ToString("x2"));
+                }
+                return builder.ToString();
+            }
         }
     }
 }
