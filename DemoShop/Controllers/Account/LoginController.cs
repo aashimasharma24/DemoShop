@@ -6,7 +6,7 @@ using Serilog;
 namespace DemoShop.API.Controllers.Account
 {
     [ApiController]
-    [Route("api/account/[controller]")]
+    [Route("api/v1/account/[controller]")]
     public class LoginController : ControllerBase
     {
         private readonly IAuthenticateUserService _userService;

@@ -1,4 +1,6 @@
 using DemoShop.Manager.DBContext;
+using DemoShop.Manager.Repositories.Interfaces;
+using DemoShop.Manager.Repositories;
 using DemoShop.Manager.Services;
 using DemoShop.Manager.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,8 +38,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false
         };
     });
-
 builder.Services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 Log.Information("Services added to the container.");
 
 var app = builder.Build();

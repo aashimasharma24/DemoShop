@@ -13,7 +13,6 @@ namespace DemoShop.Manager.Services
     {
         private readonly DemoShopDbContext _context;
         private readonly string _jwtKey;
-
         public AuthenticateUserService(DemoShopDbContext context, IConfiguration config)
         {
             _context = context;
