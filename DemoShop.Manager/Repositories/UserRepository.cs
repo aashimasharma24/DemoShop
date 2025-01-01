@@ -23,6 +23,11 @@ namespace DemoShop.Manager.Repositories
             return _context.Users.FirstOrDefault(x => x.Guid == guid);
         }
 
+        public User GetByUsername(String username)
+        {
+            return _context.Users.FirstOrDefault(x => x.Username == username);
+        }
+
         public void Add(User user)
         {
             _context.Users.Add(user);

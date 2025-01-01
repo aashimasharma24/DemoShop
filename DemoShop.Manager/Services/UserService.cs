@@ -26,6 +26,11 @@ namespace DemoShop.Manager.Services
             return _repository.GetByGUID(guid);
         }
 
+        public User GetByUsername(String username)
+        {
+            return _repository.GetByUsername(username);
+        }
+
         public void Add(User user)
         {
             _repository.Add(user);

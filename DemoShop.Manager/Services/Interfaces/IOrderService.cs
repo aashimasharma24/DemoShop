@@ -12,7 +12,7 @@ namespace DemoShop.Manager.Services.Interfaces
         IEnumerable<Order> GetAll();
         Order GetByGUID(String guid);
         void Add(Order order);
-        void Update(String guid, Order order);
+        void Update(String guid, String status);
         void Delete(String guid);
     }
 }

@@ -11,6 +11,7 @@ namespace DemoShop.Manager.Services.Interfaces
     {
         IEnumerable<User> GetAll();
         User GetByGUID(String guid);
+        User GetByUsername(String username);
         void Add(User user);
         void Update(String guid, User user);
         void Delete(String guid);

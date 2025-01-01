@@ -15,6 +15,6 @@ namespace DemoShop.Core.DataObjects
         public decimal Price { get; set; }
         public required string Guid { get; set; }
         [DataType(DataType.Date)]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

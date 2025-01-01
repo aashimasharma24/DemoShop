@@ -37,12 +37,13 @@ namespace DemoShop.Manager.Services
             _context.SaveChanges();
         }
 
-        public void Update(String guid, Order order)
+        public void Update(String guid, String status)
         {
             var existingOrder = _repository.GetByGUID(guid);
             if (existingOrder != null)
             {
-                _repository.Update(order);
+                existingOrder.Status = status;
+                _repository.Update(existingOrder);
                 _context.SaveChanges();
             }
         }

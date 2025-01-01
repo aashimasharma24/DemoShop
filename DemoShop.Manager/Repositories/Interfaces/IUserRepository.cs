@@ -11,6 +11,7 @@ namespace DemoShop.Manager.Repositories.Interfaces
     {
         IEnumerable<User> GetAll();
         User GetByGUID(String guid);
+        User GetByUsername(String username);
         void Add(User user);
         void Update(User user);
         void Delete(User user);

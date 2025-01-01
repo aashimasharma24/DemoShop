@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace DemoShop.Core.DataObjects
 {
-    public class Order
+    public class ShoppingCartItem
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
-        public List<OrderItem> Items { get; set; }
-        public string Status { get; set; }
+        public int ProductId { get; set; }
+        public int Quantity { get; set; }
+        public string UserId { get; set; }
+        public decimal Price { get; set; }
         public required string Guid { get; set; }
-        [DataType(DataType.Date)]
+        [DataType(DataType.Date)] 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     }
 }
