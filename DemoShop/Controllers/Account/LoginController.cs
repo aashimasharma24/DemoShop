@@ -1,4 +1,4 @@
-﻿using DemoShop.Core.DataObjects.Account;
+﻿using DemoShop.Core.DTOs.Account;
 using DemoShop.Manager.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;

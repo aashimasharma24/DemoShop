@@ -14,7 +14,8 @@ namespace DemoShop.Core.DataObjects
         public string Description { get; set; }
         public decimal Price { get; set; }
         public int Stock { get; set; }
-        public string Category { get; set; }
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
         public required string Guid { get; set; }
         [DataType(DataType.Date)]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

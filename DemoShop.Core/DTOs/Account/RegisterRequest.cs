@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DemoShop.Core.DataObjects.Account
+namespace DemoShop.Core.DTOs.Account
 {
-    public class LoginRequest
+    public class RegisterRequest
     {
         public string Username { get; set; }
         public string Password { get; set; }

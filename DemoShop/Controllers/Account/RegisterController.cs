@@ -1,5 +1,5 @@
 ﻿using DemoShop.Core.DataObjects;
-using DemoShop.Core.DataObjects.Account;
+using DemoShop.Core.DTOs.Account;
 using DemoShop.Manager.DBContext;
 using DemoShop.Manager.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
