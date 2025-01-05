@@ -1,5 +1,7 @@
-﻿using DemoShop.Core.DataObjects;
-using DemoShop.Manager.Services.Interfaces;
+﻿using Asp.Versioning;
+using DemoShop.Core.DataObjects;
+using DemoShop.Core.DTOs;
+using DemoShop.Manager.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -7,112 +9,100 @@ using Serilog;
 namespace DemoShop.API.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
-    public class OrderController : ControllerBase 
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [Authorize]
+    public class OrdersController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ICartRepository _cartRepository;
+        private readonly IProductRepository _productRepository;
+        private readonly IPaymentService _paymentService;
 
-        public OrderController(IOrderService orderService)
+        public OrdersController(
+            IOrderRepository orderRepository,
+            ICartRepository cartRepository,
+            IProductRepository productRepository,
+            IPaymentService paymentService)
         {
-            _orderService = orderService;
-            Log.Information("OrderController initialized.");
+            _orderRepository = orderRepository;
+            _cartRepository = cartRepository;
+            _productRepository = productRepository;
+            _paymentService = paymentService;
         }
 
-
-        [Authorize(Roles = "User")]
-        [HttpPost]
-        public IActionResult PlaceOrder([FromBody] Order order)
+        [HttpGet("user")]
+        public async Task<IActionResult> GetUserOrders()
         {
-            if (order == null || !order.Items.Any())
-            {
-                Log.Warning("Order validation failed: Empty order.");
-                return BadRequest(new { message = "Order cannot be empty." });
-            }
-
-            try
-            {
-                Log.Information("Placing order for user: {UserId}", User.FindFirst("sub")?.Value);
-                _orderService.Add(order);
-                return Ok(new { message = "Order placed successfully." });
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error placing order: {Exception}", ex);
-                return StatusCode(500, new { message = "An error occurred while placing the order." });
-            }
+            var userId = GetUserId();
+            var orders = await _orderRepository.GetByUserIdAsync(userId);
+            return Ok(orders);
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
-        public IActionResult GetAllOrders()
+        [HttpGet("{orderId}")]
+        public async Task<IActionResult> GetOrder(int orderId)
         {
-            try
-            {
-                Log.Information("Fetching all orders (Admin).");
-                var orders = _orderService.GetAll();
-                return Ok(orders);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error fetching orders: {Exception}", ex);
-                return StatusCode(500, new { message = "An error occurred while fetching orders." });
-            }
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null) return NotFound();
+
+            // Optionally check user identity if not admin
+            return Ok(order);
         }
 
-        [Authorize(Roles = "Admin,User")]
-        [HttpGet("{guid}")]
-        public IActionResult GetOrderById(String guid)
+        [HttpPost("place")]
+        public async Task<IActionResult> PlaceOrder([FromBody] OrderRequest request)
         {
-            try
+            var userId = GetUserId();
+
+            // 1. Get cart items
+            var cartItems = await _cartRepository.GetCartItemsAsync(userId);
+            if (!cartItems.Any()) return BadRequest("Cart is empty.");
+
+            // 2. Calculate total
+            var totalAmount = cartItems.Sum(ci => ci.Product!.Price * ci.Quantity);
+
+            // 3. Process Payment
+            var paymentSuccess = await _paymentService.ProcessPayment(totalAmount, request.PaymentMethod, userId);
+            if (!paymentSuccess) return BadRequest("Payment failed.");
+
+            // 4. Create order
+            var order = new Order
             {
-                Log.Information("Fetching order with ID: {GUId}", guid);
-                var order = _orderService.GetByGUID(guid);
-                if (order == null)
+                UserId = userId,
+                OrderDate = DateTime.UtcNow,
+                ShippingAddress = request.ShippingAddress,
+                PaymentMethod = request.PaymentMethod,
+                Status = "Pending"
+            };
+
+            // 5. Create OrderItems
+            foreach (var ci in cartItems)
+            {
+                order.OrderItems.Add(new OrderItem
                 {
-                    Log.Warning("Order not found with ID: {GUId}", guid);
-                    return NotFound(new { message = "Order not found." });
-                }
-                return Ok(order);
+                    ProductId = ci.ProductId,
+                    Quantity = ci.Quantity,
+                    UnitPrice = ci.Product!.Price
+                });
+
+                // Deduct stock
+                ci.Product.StockCount -= ci.Quantity;
+                await _productRepository.UpdateAsync(ci.Product);
             }
-            catch (Exception ex)
-            {
-                Log.Error("Error fetching order by GUID: {Exception}", ex);
-                return StatusCode(500, new { message = "An error occurred while fetching the order." });
-            }
+
+            // 6. Save order
+            await _orderRepository.AddAsync(order);
+
+            // 7. Clear cart
+            await _cartRepository.ClearCartAsync(userId);
+
+            // In real scenario, you might fire an async task to send a confirmation email
+            return Ok(order);
         }
 
-        [Authorize(Roles = "User")]
-        [HttpDelete("{guid}")]
-        public IActionResult CancelOrder(String guid)
+        private int GetUserId()
         {
-            try
-            {
-                Log.Information("Cancelling order with GUID: {GUID}", guid);
-                _orderService.Delete(guid);
-                return Ok(new { message = "Order cancelled successfully." });
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error cancelling order: {Exception}", ex);
-                return StatusCode(500, new { message = "An error occurred while cancelling the order." });
-            }
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPut("{guid}/status")]
-        public IActionResult UpdateOrderStatus(String guid, [FromBody] string status)
-        {
-            try
-            {
-                Log.Information("Updating order status for ID: {GUID}", guid);
-                _orderService.Update(guid, status);
-                return Ok(new { message = "Order status updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error updating order status: {Exception}", ex);
-                return StatusCode(500, new { message = "An error occurred while updating order status." });
-            }
+            return int.Parse(User.FindFirst("userId")!.Value);
         }
     }
 }
