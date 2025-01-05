@@ -8,57 +8,93 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
-using DemoShop.Manager.Middlewares;
+using Asp.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
+// -------------------------
+// 1. Configure Serilog Logging
+// -------------------------
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .ReadFrom.Configuration(new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build())
     .CreateLogger();
-
 builder.Host.UseSerilog();
 
-builder.Services.AddDbContext<DemoShopDbContext>(
-    options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
-Log.Information("Configured SQL Server with connection string.");
+// -------------------------
+// 2. Add DB Context & EF Core
+// -------------------------
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<DemoShopDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
-var jwtKey = builder.Configuration["Jwt:Key"];
-var key = Encoding.ASCII.GetBytes(jwtKey);
-Log.Information("Configuring JWT authentication.");
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidateAudience = false
-        };
-    });
+// -------------------------
+// 3. Configure Redis Caching (optional)
+// -------------------------
+/** TODO **/
+
+// -------------------------
+// 4. Configure Repositories & Services
+// -------------------------
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+
 builder.Services.AddScoped<IAuthenticateUserService, AuthenticateUserService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IShoppingCartService, ShoppingCartService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-Log.Information("Services added to the container.");
+
+// -------------------------
+// 5. Configure Authentication & JWT
+// -------------------------
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings.GetValue<string>("Key");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
+
+// -------------------------
+// 6. Configure API Versioning
+// -------------------------
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new UrlSegmentApiVersionReader();
+});
 
 var app = builder.Build();
-app.UseMiddleware<ErrorHandlingMiddleware>();
-app.UseMiddleware<RateLimitingMiddleware>();
-app.UseHttpsRedirection();
+
+app.UseSerilogRequestLogging();
+
+app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
+
 app.Run();
-Log.Information("Application started.");
