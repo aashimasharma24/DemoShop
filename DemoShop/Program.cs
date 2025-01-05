@@ -10,6 +10,10 @@ using System.Text;
 using Asp.Versioning;
 using System.Security.Claims;
 using DemoShop.BackgroundJobs;
+using Hangfire;
+using Hangfire.SqlServer;
+using DemoShop.Manager.Services.Interfaces;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +47,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPaymentService, MockPaymentService>();
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // -------------------------
 // 5. Configure Authentication & JWT
@@ -80,9 +85,51 @@ builder.Services.AddApiVersioning(options =>
     options.ApiVersionReader = new UrlSegmentApiVersionReader();
 });
 
+// -------------------------
+// 7. Add Hangfire (optional, for background jobs)
+// -------------------------
+builder.Services.AddHangfire(config =>
+{
+    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+          .UseSimpleAssemblyNameTypeSerializer()
+          .UseRecommendedSerializerSettings()
+          .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+          {
+              PrepareSchemaIfNecessary = true
+          });
+});
+builder.Services.AddHangfireServer();
+
 builder.Services.AddHostedService<NotificationService>();
 
+// -------------------------
+// 8. Add Controllers & Swagger
+// -------------------------
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "DemoShop API",
+        Version = "v1"
+    });
+});
+
 var app = builder.Build();
+
+// -------------------------
+// 9. Configure Middleware Pipeline
+// -------------------------
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(c => {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoShop API v1");
+    });
+}
 
 app.UseSerilogRequestLogging();
 
@@ -93,5 +140,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+//TODO: Secure Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire");
 
 app.Run();

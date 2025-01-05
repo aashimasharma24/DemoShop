@@ -1,6 +1,6 @@
 @DemoShop_HostAddress = http://localhost:5053
 
-GET {{DemoShop_HostAddress}}/weatherforecast/
+GET {{DemoShop_HostAddress}}/swagger/
 Accept: application/json
 
 ###

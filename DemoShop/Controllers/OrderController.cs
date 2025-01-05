@@ -2,6 +2,8 @@
 using DemoShop.Core.DataObjects;
 using DemoShop.Core.DTOs;
 using DemoShop.Manager.Repositories.Interfaces;
+using DemoShop.Manager.Services.Interfaces;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -18,17 +20,20 @@ namespace DemoShop.API.Controllers
         private readonly ICartRepository _cartRepository;
         private readonly IProductRepository _productRepository;
         private readonly IPaymentService _paymentService;
+        private readonly IEmailService _emailService;
 
         public OrdersController(
             IOrderRepository orderRepository,
             ICartRepository cartRepository,
             IProductRepository productRepository,
-            IPaymentService paymentService)
+            IPaymentService paymentService,
+            IEmailService emailService)
         {
             _orderRepository = orderRepository;
             _cartRepository = cartRepository;
             _productRepository = productRepository;
             _paymentService = paymentService;
+            _emailService = emailService;
         }
 
         [HttpGet("user")]
@@ -45,7 +50,12 @@ namespace DemoShop.API.Controllers
             var order = await _orderRepository.GetByIdAsync(orderId);
             if (order == null) return NotFound();
 
-            // Optionally check user identity if not admin
+            // If the user is not Admin, ensure they can only see their own orders
+            if (!IsAdmin() && order.UserId != GetUserId())
+            {
+                return Forbid();
+            }
+
             return Ok(order);
         }
 
@@ -96,13 +106,34 @@ namespace DemoShop.API.Controllers
             // 7. Clear cart
             await _cartRepository.ClearCartAsync(userId);
 
-            // In real scenario, you might fire an async task to send a confirmation email
+            // 8. Enqueue Hangfire job
+            BackgroundJob.Enqueue(() => _emailService.SendOrderConfirmationEmailAsync(userId, order.Id));
+
             return Ok(order);
+        }
+
+        [HttpPut("{orderId}/status")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateStatus(int orderId, [FromBody] string status)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+                return NotFound($"Order #{orderId} not found.");
+
+            // Only Admin can update status
+            await _orderRepository.UpdateStatusAsync(orderId, status);
+
+            return Ok($"Order #{orderId} status updated to '{status}'.");
         }
 
         private int GetUserId()
         {
             return int.Parse(User.FindFirst("userId")!.Value);
+        }
+
+        private bool IsAdmin()
+        {
+            return User.IsInRole("Admin");
         }
     }
 }
