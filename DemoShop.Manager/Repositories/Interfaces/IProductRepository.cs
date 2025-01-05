@@ -4,10 +4,12 @@ namespace DemoShop.Manager.Repositories.Interfaces
 {
     public interface IProductRepository
     {
-        IEnumerable<Product> GetAll();
-        Product GetByGUID(String guid);
-        void Add(Product product);
-        void Update(Product product);
-        void Delete(Product product);
+        Task<IEnumerable<Product>> GetAllAsync();
+        Task<Product?> GetByIdAsync(int id);
+        Task<Product> AddAsync(Product product);
+        Task UpdateAsync(Product product);
+        Task DeleteAsync(int id);
+
+        Task<IEnumerable<Product>> SearchAsync(string? name, string? category, decimal? minPrice, decimal? maxPrice);
     }
 }

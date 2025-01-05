@@ -8,7 +8,6 @@ namespace DemoShop.Core.DataObjects
         public string Username { get; set; } = null!;
         public string PasswordHash { get; set; } = null!;
         public string Role { get; set; } = null!;
-        public required string Guid { get; set; }
         [DataType(DataType.Date)]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

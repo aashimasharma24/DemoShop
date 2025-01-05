@@ -9,11 +9,9 @@ namespace DemoShop.Manager.Repositories.Interfaces
 {
     public interface IShoppingCartRepository
     {
-        IEnumerable<ShoppingCartItem> GetCartItems(string userId);
-        void AddToCart(ShoppingCartItem item);
-        void UpdateCartItem(ShoppingCartItem item);
-        void RemoveFromCart(String guid);
-        void ClearCart(string userId);
-        decimal CalculateCartTotal(string userId);
+        Task<IEnumerable<CartItem>> GetCartItemsAsync(int userId);
+        Task AddOrUpdateCartItemAsync(int userId, int productId, int quantity);
+        Task RemoveCartItemAsync(int cartItemId);
+        Task ClearCartAsync(int userId);
     }
 }

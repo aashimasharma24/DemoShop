@@ -1,6 +1,7 @@
 ﻿using DemoShop.Core.DataObjects;
 using DemoShop.Manager.DBContext;
 using DemoShop.Manager.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,49 +19,52 @@ namespace DemoShop.Manager.Repositories
             _context = context;
         }
 
-        public IEnumerable<ShoppingCartItem> GetCartItems(string userId) =>
-            _context.ShoppingCartItems.Where(c => c.UserId == userId).ToList();
-
-        public void AddToCart(ShoppingCartItem item)
+        public async Task<IEnumerable<CartItem>> GetCartItemsAsync(int userId)
         {
-            _context.ShoppingCartItems.Add(item);
-            _context.SaveChanges();
+            return await _context.CartItems
+                .Include(c => c.Product)
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
         }
 
-        public void UpdateCartItem(ShoppingCartItem item)
+        public async Task AddOrUpdateCartItemAsync(int userId, int productId, int quantity)
         {
-            if (item.Quantity == 0)
+            var cartItem = await _context.CartItems
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.ProductId == productId);
+
+            if (cartItem == null)
             {
-                RemoveFromCart(item.Guid);
+                cartItem = new CartItem
+                {
+                    UserId = userId,
+                    ProductId = productId,
+                    Quantity = quantity
+                };
+                _context.CartItems.Add(cartItem);
             }
             else
             {
-                _context.ShoppingCartItems.Update(item);
-                _context.SaveChanges();
+                cartItem.Quantity += quantity;
+                _context.CartItems.Update(cartItem);
             }
+            await _context.SaveChangesAsync();
         }
 
-        public void RemoveFromCart(String guid)
+        public async Task RemoveCartItemAsync(int cartItemId)
         {
-            var item = _context.ShoppingCartItems.FirstOrDefault(x => x.Guid == guid);
+            var item = await _context.CartItems.FindAsync(cartItemId);
             if (item != null)
             {
-                _context.ShoppingCartItems.Remove(item);
-                _context.SaveChanges();
+                _context.CartItems.Remove(item);
+                await _context.SaveChangesAsync();
             }
         }
-        public void ClearCart(string userId)
-        {
-            var items = _context.ShoppingCartItems.Where(c => c.UserId == userId).ToList();
-            _context.ShoppingCartItems.RemoveRange(items);
-            _context.SaveChanges();
-        }
 
-        public decimal CalculateCartTotal(string userId)
+        public async Task ClearCartAsync(int userId)
         {
-            return _context.ShoppingCartItems
-                .Where(c => c.UserId == userId)
-                .Sum(c => c.Quantity * c.Price);
+            var items = _context.CartItems.Where(c => c.UserId == userId);
+            _context.CartItems.RemoveRange(items);
+            await _context.SaveChangesAsync();
         }
     }
 }

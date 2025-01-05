@@ -1,6 +1,7 @@
 ﻿using DemoShop.Core.DataObjects;
 using DemoShop.Manager.DBContext;
 using DemoShop.Manager.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DemoShop.Manager.Repositories
 {
@@ -13,32 +14,44 @@ namespace DemoShop.Manager.Repositories
             _context = context;
         }
 
-        public IEnumerable<Order> GetAll()
+        public async Task<Order> GetByIdAsync(int id)
         {
-           return _context.Orders.ToList();
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
         }
 
-        public Order GetByGUID(String guid)
+        public async Task<IEnumerable<Order>> GetAllAsync()
         {
-
-           var res = _context.Orders.FirstOrDefault(x => x.Guid == guid);
-            return res;
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .ToListAsync();
         }
 
-        public void Add(Order order) 
-        { 
-            _context.Orders.Add(order); 
-        }
-
-        public void Update(Order order)
+        public async Task<IEnumerable<Order>> GetByUserIdAsync(int userId)
         {
-            _context.Orders.Update(order);
+            return await _context.Orders
+                .Include(o => o.OrderItems)
+                .Where(o => o.UserId == userId)
+                .ToListAsync();
         }
 
-        public void Delete(Order order)
+        public async Task<Order> AddAsync(Order order)
         {
-            _context.Orders.Remove(order);
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+            return order;
         }
 
+        public async Task UpdateStatusAsync(int orderId, string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order != null)
+            {
+                order.Status = status;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

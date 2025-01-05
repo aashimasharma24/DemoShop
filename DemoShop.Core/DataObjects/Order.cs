@@ -11,9 +11,8 @@ namespace DemoShop.Core.DataObjects
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public string Status { get; set; } = "Pending";
-        public required string Guid { get; set; }
         [DataType(DataType.Date)]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

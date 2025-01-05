@@ -29,7 +29,7 @@ namespace DemoShop.API.Controllers
 
         [Authorize(Roles = "User")]
         [HttpPost]
-        public IActionResult AddToCart([FromBody] ShoppingCartItem item)
+        public IActionResult AddToCart([FromBody] CartItem item)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace DemoShop.API.Controllers
 
         [Authorize(Roles = "User")]
         [HttpPut("{id}")]
-        public IActionResult UpdateCartItem([FromBody] ShoppingCartItem item)
+        public IActionResult UpdateCartItem([FromBody] CartItem item)
         {
             Log.Information("Updating cart item GUID: {GUID}", item.Guid);
             _cartService.UpdateCartItem(item);

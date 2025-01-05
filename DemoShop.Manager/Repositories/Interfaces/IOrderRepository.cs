@@ -9,10 +9,10 @@ namespace DemoShop.Manager.Repositories.Interfaces
 {
     public interface IOrderRepository
     {
-        IEnumerable<Order> GetAll();
-        Order GetByGUID(String guid);
-        void Add(Order order);
-        void Update(Order order);
-        void Delete(Order order);
+        Task<Order> GetByIdAsync(int id);
+        Task<IEnumerable<Order>> GetAllAsync();
+        Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
+        Task<Order> AddAsync(Order order);
+        Task UpdateStatusAsync(int orderId, string status);
     }
 }

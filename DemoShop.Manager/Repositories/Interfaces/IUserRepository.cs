@@ -9,11 +9,10 @@ namespace DemoShop.Manager.Repositories.Interfaces
 {
     public interface IUserRepository
     {
-        IEnumerable<User> GetAll();
-        User GetByGUID(String guid);
-        User GetByUsername(String username);
-        void Add(User user);
-        void Update(User user);
-        void Delete(User user);
+        Task<User?> GetByUsernameAsync(string username);
+        Task<User> AddAsync(User user);
+        Task<User?> GetByIdAsync(int userId);
+        Task<IEnumerable<User>> GetAllAsync();
+        Task UpdateAsync(User user);
     }
 }

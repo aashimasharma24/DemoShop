@@ -1,6 +1,7 @@
 ﻿using DemoShop.Core.DataObjects;
 using DemoShop.Manager.DBContext;
 using DemoShop.Manager.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DemoShop.Manager.Repositories
 {
@@ -13,34 +14,33 @@ namespace DemoShop.Manager.Repositories
             _context = context;
         }
 
-        public IEnumerable<User> GetAll()
+        public async Task<User?> GetByUsernameAsync(string username)
         {
-            return _context.Users.ToList();
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Username == username);
         }
 
-        public User GetByGUID(String guid)
-        {
-            return _context.Users.FirstOrDefault(x => x.Guid == guid);
-        }
-
-        public User GetByUsername(String username)
-        {
-            return _context.Users.FirstOrDefault(x => x.Username == username);
-        }
-
-        public void Add(User user)
+        public async Task<User> AddAsync(User user)
         {
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return user;
         }
 
-        public void Update(User user)
+        public async Task<User?> GetByIdAsync(int userId)
         {
-            _context.Users.Update(user);
+            return await _context.Users.FindAsync(userId);
         }
 
-        public void Delete(User user)
+        public async Task<IEnumerable<User>> GetAllAsync()
         {
-            _context.Users.Remove(user);
+            return await _context.Users.ToListAsync();
+        }
+
+        public async Task UpdateAsync(User user)
+        {
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
         }
     }
 }
