@@ -30,10 +30,11 @@ namespace DemoShop.Manager.Repositories
             return product;
         }
 
-        public async Task UpdateAsync(Product product)
+        public async Task<Product> UpdateAsync(Product product)
         {
             _context.Entry(product).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            return product;
         }
 
         public async Task DeleteAsync(int id)
