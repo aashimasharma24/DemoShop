@@ -9,6 +9,7 @@ using Serilog;
 using System.Text;
 using Asp.Versioning;
 using System.Security.Claims;
+using DemoShop.BackgroundJobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,8 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
     options.ApiVersionReader = new UrlSegmentApiVersionReader();
 });
+
+builder.Services.AddHostedService<NotificationService>();
 
 var app = builder.Build();
 
