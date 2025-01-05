@@ -14,18 +14,21 @@ using Hangfire;
 using Hangfire.SqlServer;
 using DemoShop.Manager.Services.Interfaces;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------------
 // 1. Configure Serilog Logging
 // -------------------------
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(new ConfigurationBuilder()
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-        .Build())
-    .CreateLogger();
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console();
+});
 
 // -------------------------
 // 2. Add DB Context & EF Core
@@ -117,30 +120,53 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-var app = builder.Build();
-
-// -------------------------
-// 9. Configure Middleware Pipeline
-// -------------------------
-if (app.Environment.IsDevelopment())
+builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoShop API v1");
-    });
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        return new BadRequestObjectResult(context.ModelState);
+    };
+});
+
+
+try
+{
+    Log.Information("Starting up the application.");
+
+    var app = builder.Build();
+
+    // -------------------------
+    // 9. Configure Middleware Pipeline
+    // -------------------------
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "DemoShop API v1");
+        });
+    }
+
+    app.UseSerilogRequestLogging();
+
+    app.UseRouting();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    //TODO: Secure Hangfire Dashboard
+    app.UseHangfireDashboard("/hangfire");
+
+    app.Run();
 }
-
-app.UseSerilogRequestLogging();
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-//TODO: Secure Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire");
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application failed to start.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

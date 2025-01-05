@@ -16,6 +16,7 @@ namespace DemoShop.API.Controllers
     [Authorize]
     public class OrdersController : ControllerBase
     {
+        private readonly ILogger<OrdersController> _logger;
         private readonly IOrderRepository _orderRepository;
         private readonly ICartRepository _cartRepository;
         private readonly IProductRepository _productRepository;
@@ -23,12 +24,14 @@ namespace DemoShop.API.Controllers
         private readonly IEmailService _emailService;
 
         public OrdersController(
+            ILogger<OrdersController> logger,
             IOrderRepository orderRepository,
             ICartRepository cartRepository,
             IProductRepository productRepository,
             IPaymentService paymentService,
             IEmailService emailService)
         {
+            _logger = logger;
             _orderRepository = orderRepository;
             _cartRepository = cartRepository;
             _productRepository = productRepository;
@@ -47,21 +50,31 @@ namespace DemoShop.API.Controllers
         [HttpGet("{orderId}")]
         public async Task<IActionResult> GetOrder(int orderId)
         {
+            _logger.LogInformation("Fetching order with id {OrderId}", orderId);
+
             var order = await _orderRepository.GetByIdAsync(orderId);
-            if (order == null) return NotFound();
+            if (order == null)
+            {
+                _logger.LogWarning("Order {OrderId} not found.", orderId);
+                return NotFound();
+            }
 
             // If the user is not Admin, ensure they can only see their own orders
             if (!IsAdmin() && order.UserId != GetUserId())
             {
+                _logger.LogWarning("User {UserId} is not authorized to view order {OrderId}.", GetUserId(), orderId);
                 return Forbid();
             }
 
+            _logger.LogInformation("Order {OrderId} retrieved successfully.", orderId);
             return Ok(order);
         }
 
         [HttpPost("place")]
         public async Task<IActionResult> PlaceOrder([FromBody] OrderRequest request)
         {
+            _logger.LogInformation("User {UserId} is placing an order", User?.FindFirst("userId")?.Value);
+
             var userId = GetUserId();
 
             // 1. Get cart items
@@ -73,7 +86,11 @@ namespace DemoShop.API.Controllers
 
             // 3. Process Payment
             var paymentSuccess = await _paymentService.ProcessPayment(totalAmount, request.PaymentMethod, userId);
-            if (!paymentSuccess) return BadRequest("Payment failed.");
+            if (!paymentSuccess) 
+            {
+                _logger.LogWarning("Payment failed for user {UserId}.", userId);
+                return BadRequest("Payment failed.");
+            }
 
             // 4. Create order
             var order = new Order
@@ -108,6 +125,11 @@ namespace DemoShop.API.Controllers
 
             // 8. Enqueue Hangfire job
             BackgroundJob.Enqueue(() => _emailService.SendOrderConfirmationEmailAsync(userId, order.Id));
+
+
+            _logger.LogInformation("Order {OrderId} placed successfully by user {UserId}.",
+                order.Id,
+                User?.FindFirst("userId")?.Value);
 
             return Ok(order);
         }
