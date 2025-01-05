@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoShop.Core", "DemoShop.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoShop.BackgroundJobs", "DemoShop.BackgroundJobs\DemoShop.BackgroundJobs.csproj", "{91E0EBEA-BCD6-4918-8B6F-9CBCCCD6FD90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoShop.UnitTests", "DemoShop.UnitTests\DemoShop.UnitTests.csproj", "{5AE50A3C-983A-4FA8-AB6F-7E9C1965B4D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{91E0EBEA-BCD6-4918-8B6F-9CBCCCD6FD90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91E0EBEA-BCD6-4918-8B6F-9CBCCCD6FD90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91E0EBEA-BCD6-4918-8B6F-9CBCCCD6FD90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AE50A3C-983A-4FA8-AB6F-7E9C1965B4D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AE50A3C-983A-4FA8-AB6F-7E9C1965B4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AE50A3C-983A-4FA8-AB6F-7E9C1965B4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AE50A3C-983A-4FA8-AB6F-7E9C1965B4D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
