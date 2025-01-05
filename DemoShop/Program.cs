@@ -39,8 +39,9 @@ builder.Services.AddDbContext<DemoShopDbContext>(options =>
 // -------------------------
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPaymentService, MockPaymentService>();
 
 // -------------------------
 // 5. Configure Authentication & JWT
