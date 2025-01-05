@@ -12,6 +12,7 @@ namespace DemoShop.Manager.DBContext
         {
             Log.Information("DemoShopDbContext initialized.");
         }
+
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
@@ -20,10 +21,7 @@ namespace DemoShop.Manager.DBContext
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Category>()
-                .HasMany(c => c.Products)
-                .WithOne(p => p.Category)
-                .HasForeignKey(p => p.CategoryId);
+            base.OnModelCreating(modelBuilder);
         }
     }
 
