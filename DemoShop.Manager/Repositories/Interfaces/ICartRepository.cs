@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DemoShop.Manager.Repositories.Interfaces
 {
-    public interface IShoppingCartRepository
+    public interface ICartRepository
     {
         Task<IEnumerable<CartItem>> GetCartItemsAsync(int userId);
         Task AddOrUpdateCartItemAsync(int userId, int productId, int quantity);

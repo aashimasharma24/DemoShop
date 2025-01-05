@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace DemoShop.Manager.Repositories
 {
-    public class ShoppingCartRepository : IShoppingCartRepository
+    public class CartRepository : ICartRepository
     {
         private readonly DemoShopDbContext _context;
 
-        public ShoppingCartRepository(DemoShopDbContext context)
+        public CartRepository(DemoShopDbContext context)
         {
             _context = context;
         }
